@@ -191,6 +191,93 @@ const AIProviderManager = () => {
     );
   };
 
+  const handleFetchModels = (id: string) => {
+    // Simulate fetching models from API
+    const mockModels = {
+      openai: [
+        {
+          id: "gpt-4o",
+          name: "GPT-4o",
+          provider: "openai",
+          contextWindow: 128000,
+          maxTokens: 4096,
+          isSelected: false,
+          role: "primary" as const,
+        },
+        {
+          id: "gpt-4-turbo",
+          name: "GPT-4 Turbo",
+          provider: "openai",
+          contextWindow: 128000,
+          maxTokens: 4096,
+          isSelected: false,
+          role: "fallback" as const,
+        },
+        {
+          id: "gpt-3.5-turbo",
+          name: "GPT-3.5 Turbo",
+          provider: "openai",
+          contextWindow: 16385,
+          maxTokens: 4096,
+          isSelected: false,
+          role: "specific" as const,
+        },
+      ],
+      anthropic: [
+        {
+          id: "claude-3-opus",
+          name: "Claude 3 Opus",
+          provider: "anthropic",
+          contextWindow: 200000,
+          maxTokens: 4096,
+          isSelected: false,
+          role: "primary" as const,
+        },
+        {
+          id: "claude-3-sonnet",
+          name: "Claude 3 Sonnet",
+          provider: "anthropic",
+          contextWindow: 200000,
+          maxTokens: 4096,
+          isSelected: false,
+          role: "fallback" as const,
+        },
+      ],
+      gemini: [
+        {
+          id: "gemini-1.5-pro",
+          name: "Gemini 1.5 Pro",
+          provider: "gemini",
+          contextWindow: 1000000,
+          maxTokens: 8192,
+          isSelected: false,
+          role: "primary" as const,
+        },
+        {
+          id: "gemini-1.0-pro",
+          name: "Gemini 1.0 Pro",
+          provider: "gemini",
+          contextWindow: 32768,
+          maxTokens: 2048,
+          isSelected: false,
+          role: "fallback" as const,
+        },
+      ],
+    };
+
+    setProviders(
+      providers.map((provider) =>
+        provider.id === id
+          ? {
+              ...provider,
+              models: mockModels[id as keyof typeof mockModels] || [],
+              status: "connected",
+            }
+          : provider,
+      ),
+    );
+  };
+
   const handleToggleModel = (providerId: string, modelId: string) => {
     setProviders(
       providers.map((provider) =>
@@ -464,7 +551,11 @@ const AIProviderManager = () => {
                           <p className="text-muted-foreground">
                             No models available. Connect your API key first.
                           </p>
-                          <Button variant="outline" className="mt-4">
+                          <Button
+                            variant="outline"
+                            className="mt-4"
+                            onClick={() => handleFetchModels(selectedProvider)}
+                          >
                             <RefreshCw className="mr-2 h-4 w-4" /> Fetch
                             Available Models
                           </Button>

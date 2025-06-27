@@ -9,6 +9,8 @@ import {
   MessageSquare,
   BarChart3,
   Bot,
+  Database,
+  Shield,
 } from "lucide-react";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
@@ -72,13 +74,23 @@ export default function DashboardLayout({
                 AI Providers
               </Button>
             </Link>
+            <Link href="/knowledge-base">
+              <Button variant="ghost" className="justify-start gap-2 w-full">
+                <Database className="h-5 w-5" />
+                Knowledge Base
+              </Button>
+            </Link>
+            <Link href="/enterprise-settings">
+              <Button variant="ghost" className="justify-start gap-2 w-full">
+                <Shield className="h-5 w-5" />
+                Enterprise
+              </Button>
+            </Link>
           </nav>
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
       </div>
     </div>
   );
