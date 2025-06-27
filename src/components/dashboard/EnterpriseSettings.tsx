@@ -11,8 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -21,221 +21,225 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
 import {
   Users,
-  Shield,
-  Palette,
-  Webhook,
-  Plus,
-  Trash2,
-  Edit,
-  CheckCircle,
-  AlertCircle,
-  Settings,
-  Crown,
-  UserCheck,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  CreditCard,
+  Activity,
+  UserPlus,
+  UserMinus,
+  Mail,
+  MoreHorizontal,
+  Search,
+  Filter,
+  Download,
+  RefreshCw,
   Eye,
+  Edit,
+  Trash2,
+  Crown,
+  Shield,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Ban,
+  Calendar,
+  BarChart3,
+  PieChart,
+  LineChart,
 } from "lucide-react";
+import { useUsers } from "@/hooks/useUsers";
+import { useStats } from "@/hooks/useStats";
+import { useSubscriptions } from "@/hooks/useSubscriptions";
+import { useToast } from "@/components/ui/use-toast";
 
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: "admin" | "editor" | "viewer";
-  status: "active" | "pending" | "inactive";
-  lastActive: string;
-  avatar: string;
-}
+// Mock data for demonstration - replace with real data from hooks
+const mockStats = {
+  users: {
+    total: 12847,
+    active: 11203,
+    growth_rate: 12.5,
+    new_today: 47,
+  },
+  revenue: {
+    total: 284750,
+    monthly: 23729,
+    growth_rate: 8.3,
+    arr: 284750,
+  },
+  subscriptions: {
+    active: 8934,
+    cancelled: 1203,
+    churn_rate: 2.1,
+    conversion_rate: 15.7,
+  },
+  widgets: {
+    total: 3847,
+    active: 3201,
+    conversations: 89234,
+    avg_response_time: 1.2,
+  },
+};
 
-interface WebhookEndpoint {
-  id: string;
-  name: string;
-  url: string;
-  events: string[];
-  status: "active" | "inactive" | "error";
-  lastTriggered: string;
-  secret: string;
-}
+const mockUsers = [
+  {
+    id: "1",
+    name: "John Doe",
+    email: "john@company.com",
+    role: "admin" as const,
+    status: "active" as const,
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
+    created_at: "2024-01-15T10:30:00Z",
+    updated_at: "2024-01-15T10:30:00Z",
+    last_login: "2024-01-15T10:30:00Z",
+    subscription: {
+      plan: "Pro",
+      status: "active",
+      expires_at: "2024-02-15T10:30:00Z",
+    },
+    stats: {
+      widgets_created: 12,
+      conversations: 1847,
+      last_active: "2024-01-15T10:30:00Z",
+    },
+  },
+  {
+    id: "2",
+    name: "Jane Smith",
+    email: "jane@startup.io",
+    role: "user" as const,
+    status: "active" as const,
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=jane",
+    created_at: "2024-01-14T15:20:00Z",
+    updated_at: "2024-01-14T15:20:00Z",
+    last_login: "2024-01-14T15:20:00Z",
+    subscription: {
+      plan: "Starter",
+      status: "active",
+      expires_at: "2024-02-14T15:20:00Z",
+    },
+    stats: {
+      widgets_created: 3,
+      conversations: 234,
+      last_active: "2024-01-14T15:20:00Z",
+    },
+  },
+  {
+    id: "3",
+    name: "Bob Wilson",
+    email: "bob@enterprise.com",
+    role: "user" as const,
+    status: "suspended" as const,
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=bob",
+    created_at: "2024-01-10T09:15:00Z",
+    updated_at: "2024-01-10T09:15:00Z",
+    last_login: "2024-01-10T09:15:00Z",
+    subscription: {
+      plan: "Enterprise",
+      status: "past_due",
+      expires_at: "2024-01-20T09:15:00Z",
+    },
+    stats: {
+      widgets_created: 25,
+      conversations: 5672,
+      last_active: "2024-01-10T09:15:00Z",
+    },
+  },
+];
 
 const EnterpriseSettings = () => {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: "1",
-      name: "John Doe",
-      email: "john@company.com",
-      role: "admin",
-      status: "active",
-      lastActive: "2024-01-15",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
-    },
-    {
-      id: "2",
-      name: "Jane Smith",
-      email: "jane@company.com",
-      role: "editor",
-      status: "active",
-      lastActive: "2024-01-14",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=jane",
-    },
-    {
-      id: "3",
-      name: "Bob Wilson",
-      email: "bob@company.com",
-      role: "viewer",
-      status: "pending",
-      lastActive: "Never",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=bob",
-    },
-  ]);
-
-  const [webhooks, setWebhooks] = useState<WebhookEndpoint[]>([
-    {
-      id: "1",
-      name: "Slack Notifications",
-      url: "https://hooks.slack.com/services/...",
-      events: ["conversation.started", "conversation.ended"],
-      status: "active",
-      lastTriggered: "2024-01-15 10:30",
-      secret: "whsec_***",
-    },
-    {
-      id: "2",
-      name: "CRM Integration",
-      url: "https://api.crm.com/webhooks/chat",
-      events: ["conversation.started", "user.feedback"],
-      status: "error",
-      lastTriggered: "2024-01-14 15:20",
-      secret: "whsec_***",
-    },
-  ]);
-
-  const [newMember, setNewMember] = useState({
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRole, setSelectedRole] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [newUser, setNewUser] = useState({
     name: "",
     email: "",
-    role: "viewer",
-  });
-  const [newWebhook, setNewWebhook] = useState({
-    name: "",
-    url: "",
-    events: [] as string[],
-  });
-  const [brandingSettings, setBrandingSettings] = useState({
-    companyName: "Your Company",
-    logoUrl: "",
-    primaryColor: "#3b82f6",
-    secondaryColor: "#64748b",
-    customDomain: "",
-    hideTempobranding: false,
+    role: "user",
   });
 
-  const availableEvents = [
-    "conversation.started",
-    "conversation.ended",
-    "message.sent",
-    "message.received",
-    "user.feedback",
-    "widget.deployed",
-    "error.occurred",
-  ];
+  const { toast } = useToast();
 
-  const handleAddTeamMember = () => {
-    if (!newMember.name || !newMember.email) return;
+  // In a real app, these would use the actual hooks
+  // const { users, loading, createUser, updateUser, deleteUser } = useUsers();
+  // const { stats } = useStats();
+  // const { subscriptions } = useSubscriptions();
 
-    const member: TeamMember = {
-      id: Date.now().toString(),
-      name: newMember.name,
-      email: newMember.email,
-      role: newMember.role as "admin" | "editor" | "viewer",
-      status: "pending",
-      lastActive: "Never",
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${newMember.name}`,
-    };
+  const stats = mockStats;
+  const users = mockUsers;
+  const loading = false;
 
-    setTeamMembers((prev) => [...prev, member]);
-    setNewMember({ name: "", email: "", role: "viewer" });
+  const handleCreateUser = async () => {
+    try {
+      // await createUser(newUser);
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
+      setIsCreateUserOpen(false);
+      setNewUser({ name: "", email: "", role: "user" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create user",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateMemberRole = (id: string, role: string) => {
-    setTeamMembers((prev) =>
-      prev.map((member) =>
-        member.id === id
-          ? { ...member, role: role as "admin" | "editor" | "viewer" }
-          : member,
-      ),
-    );
-  };
-
-  const handleRemoveTeamMember = (id: string) => {
-    setTeamMembers((prev) => prev.filter((member) => member.id !== id));
-  };
-
-  const handleAddWebhook = () => {
-    if (!newWebhook.name || !newWebhook.url) return;
-
-    const webhook: WebhookEndpoint = {
-      id: Date.now().toString(),
-      name: newWebhook.name,
-      url: newWebhook.url,
-      events: newWebhook.events,
-      status: "active",
-      lastTriggered: "Never",
-      secret: `whsec_${Math.random().toString(36).substr(2, 20)}`,
-    };
-
-    setWebhooks((prev) => [...prev, webhook]);
-    setNewWebhook({ name: "", url: "", events: [] });
-  };
-
-  const handleToggleWebhookEvent = (webhookId: string, event: string) => {
-    setWebhooks((prev) =>
-      prev.map((webhook) => {
-        if (webhook.id === webhookId) {
-          const events = webhook.events.includes(event)
-            ? webhook.events.filter((e) => e !== event)
-            : [...webhook.events, event];
-          return { ...webhook, events };
-        }
-        return webhook;
-      }),
-    );
-  };
-
-  const handleRemoveWebhook = (id: string) => {
-    setWebhooks((prev) => prev.filter((webhook) => webhook.id !== id));
-  };
-
-  const handleSaveBranding = () => {
-    console.log("Saving branding settings:", brandingSettings);
-  };
-
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case "admin":
-        return (
-          <Badge className="bg-red-500">
-            <Crown className="w-3 h-3 mr-1" />
-            Admin
-          </Badge>
-        );
-      case "editor":
-        return (
-          <Badge className="bg-blue-500">
-            <Edit className="w-3 h-3 mr-1" />
-            Editor
-          </Badge>
-        );
-      case "viewer":
-        return (
-          <Badge variant="outline">
-            <Eye className="w-3 h-3 mr-1" />
-            Viewer
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{role}</Badge>;
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      // await deleteUser(userId);
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
+        variant: "destructive",
+      });
     }
   };
 
@@ -243,18 +247,23 @@ const EnterpriseSettings = () => {
     switch (status) {
       case "active":
         return (
-          <Badge className="bg-green-500">
+          <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
             <CheckCircle className="w-3 h-3 mr-1" />
             Active
           </Badge>
         );
-      case "pending":
-        return <Badge className="bg-yellow-500">Pending</Badge>;
-      case "error":
+      case "suspended":
         return (
-          <Badge variant="destructive">
-            <AlertCircle className="w-3 h-3 mr-1" />
-            Error
+          <Badge className="bg-red-500/10 text-red-500 border-red-500/20">
+            <Ban className="w-3 h-3 mr-1" />
+            Suspended
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">
+            <Clock className="w-3 h-3 mr-1" />
+            Pending
           </Badge>
         );
       default:
@@ -262,647 +271,616 @@ const EnterpriseSettings = () => {
     }
   };
 
+  const getRoleBadge = (role: string) => {
+    switch (role) {
+      case "admin":
+        return (
+          <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20">
+            <Crown className="w-3 h-3 mr-1" />
+            Admin
+          </Badge>
+        );
+      case "editor":
+        return (
+          <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+            <Edit className="w-3 h-3 mr-1" />
+            Editor
+          </Badge>
+        );
+      case "user":
+        return (
+          <Badge className="bg-gray-500/10 text-gray-500 border-gray-500/20">
+            <Users className="w-3 h-3 mr-1" />
+            User
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">{role}</Badge>;
+    }
+  };
+
+  const StatCard = ({
+    title,
+    value,
+    change,
+    icon: Icon,
+    trend,
+  }: {
+    title: string;
+    value: string | number;
+    change: number;
+    icon: React.ElementType;
+    trend: "up" | "down";
+  }) => (
+    <Card className="relative overflow-hidden bg-gradient-to-br from-background to-muted/20 border-border/50 backdrop-blur-sm">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <div className="flex items-center text-xs text-muted-foreground">
+          {trend === "up" ? (
+            <TrendingUp className="mr-1 h-3 w-3 text-green-500" />
+          ) : (
+            <TrendingDown className="mr-1 h-3 w-3 text-red-500" />
+          )}
+          <span className={trend === "up" ? "text-green-500" : "text-red-500"}>
+            {change > 0 ? "+" : ""}
+            {change}%
+          </span>
+          <span className="ml-1">from last month</span>
+        </div>
+      </CardContent>
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -skew-x-12 translate-x-full group-hover:translate-x-[-200%] transition-transform duration-1000" />
+    </Card>
+  );
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = selectedRole === "all" || user.role === selectedRole;
+    const matchesStatus =
+      selectedStatus === "all" || user.status === selectedStatus;
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
   return (
-    <div className="bg-background w-full p-6">
-      <Tabs defaultValue="team" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="team">Team & Roles</TabsTrigger>
-          <TabsTrigger value="branding">White-Labeling</TabsTrigger>
-          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-6 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+            Enterprise Dashboard
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Comprehensive admin control center for your SaaS platform
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export Data
+          </Button>
+          <Button variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Users"
+          value={stats.users.total.toLocaleString()}
+          change={stats.users.growth_rate}
+          icon={Users}
+          trend="up"
+        />
+        <StatCard
+          title="Monthly Revenue"
+          value={`$${stats.revenue.monthly.toLocaleString()}`}
+          change={stats.revenue.growth_rate}
+          icon={DollarSign}
+          trend="up"
+        />
+        <StatCard
+          title="Active Subscriptions"
+          value={stats.subscriptions.active.toLocaleString()}
+          change={-stats.subscriptions.churn_rate}
+          icon={CreditCard}
+          trend="down"
+        />
+        <StatCard
+          title="Widget Conversations"
+          value={stats.widgets.conversations.toLocaleString()}
+          change={15.2}
+          icon={Activity}
+          trend="up"
+        />
+      </div>
+
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="users" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Users
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger
+            value="subscriptions"
+            className="flex items-center gap-2"
+          >
+            <CreditCard className="h-4 w-4" />
+            Subscriptions
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Settings
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="team" className="space-y-6">
-          <Card>
+        {/* Users Tab */}
+        <TabsContent value="users" className="space-y-6">
+          <Card className="bg-gradient-to-br from-background to-muted/10 border-border/50">
             <CardHeader>
-              <CardTitle>Add Team Member</CardTitle>
-              <CardDescription>
-                Invite new team members and assign roles
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="memberName">Name</Label>
-                  <Input
-                    id="memberName"
-                    placeholder="John Doe"
-                    value={newMember.name}
-                    onChange={(e) =>
-                      setNewMember((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                  />
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    User Management
+                  </CardTitle>
+                  <CardDescription>
+                    Manage user accounts, roles, and permissions
+                  </CardDescription>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="memberEmail">Email</Label>
-                  <Input
-                    id="memberEmail"
-                    type="email"
-                    placeholder="john@company.com"
-                    value={newMember.email}
-                    onChange={(e) =>
-                      setNewMember((prev) => ({
-                        ...prev,
-                        email: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="memberRole">Role</Label>
-                  <Select
-                    value={newMember.role}
-                    onValueChange={(value) =>
-                      setNewMember((prev) => ({ ...prev, role: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="editor">Editor</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddTeamMember} className="w-full">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Member
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-              <CardDescription>
-                Manage team member roles and permissions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {teamMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 rounded-full overflow-hidden">
-                        <img
-                          src={member.avatar}
-                          alt={member.name}
-                          className="w-full h-full object-cover"
+                <Dialog
+                  open={isCreateUserOpen}
+                  onOpenChange={setIsCreateUserOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Add User
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Create New User</DialogTitle>
+                      <DialogDescription>
+                        Add a new user to your platform. They will receive an
+                        invitation email.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input
+                          id="name"
+                          value={newUser.name}
+                          onChange={(e) =>
+                            setNewUser((prev) => ({
+                              ...prev,
+                              name: e.target.value,
+                            }))
+                          }
+                          placeholder="John Doe"
                         />
                       </div>
-                      <div>
-                        <h4 className="font-medium">{member.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {member.email}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Last active: {member.lastActive}
-                        </p>
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={newUser.email}
+                          onChange={(e) =>
+                            setNewUser((prev) => ({
+                              ...prev,
+                              email: e.target.value,
+                            }))
+                          }
+                          placeholder="john@company.com"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor="role">Role</Label>
+                        <Select
+                          value={newUser.role}
+                          onValueChange={(value) =>
+                            setNewUser((prev) => ({ ...prev, role: value }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="editor">Editor</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      {getStatusBadge(member.status)}
-                      <Select
-                        value={member.role}
-                        onValueChange={(value) =>
-                          handleUpdateMemberRole(member.id, value)
-                        }
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="editor">Editor</SelectItem>
-                          <SelectItem value="viewer">Viewer</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <DialogFooter>
                       <Button
                         variant="outline"
-                        size="sm"
-                        onClick={() => handleRemoveTeamMember(member.id)}
+                        onClick={() => setIsCreateUserOpen(false)}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        Cancel
                       </Button>
-                    </div>
-                  </div>
-                ))}
+                      <Button onClick={handleCreateUser}>Create User</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Filters */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search users..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={selectedRole} onValueChange={setSelectedRole}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="editor">Editor</SelectItem>
+                    <SelectItem value="user">User</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={selectedStatus}
+                  onValueChange={setSelectedStatus}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="suspended">Suspended</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Users Table */}
+              <div className="rounded-lg border bg-card/50 backdrop-blur-sm">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/50">
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Subscription</TableHead>
+                      <TableHead>Activity</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow
+                        key={user.id}
+                        className="border-border/50 hover:bg-muted/20"
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.avatar} alt={user.name} />
+                              <AvatarFallback>
+                                {user.name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {user.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getRoleBadge(user.role)}</TableCell>
+                        <TableCell>{getStatusBadge(user.status)}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div className="font-medium">
+                              {user.subscription?.plan}
+                            </div>
+                            <div className="text-muted-foreground">
+                              {user.subscription?.status}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <div>{user.stats?.widgets_created} widgets</div>
+                            <div className="text-muted-foreground">
+                              {user.stats?.conversations} conversations
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit User
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Mail className="h-4 w-4 mr-2" />
+                                Send Message
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => e.preventDefault()}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete User
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Are you sure?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This action cannot be undone. This will
+                                      permanently delete the user account and
+                                      all associated data.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>
+                                      Cancel
+                                    </AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteUser(user.id)}
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <Card>
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="bg-gradient-to-br from-background to-muted/10 border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LineChart className="h-5 w-5" />
+                  User Growth
+                </CardTitle>
+                <CardDescription>
+                  User acquisition and growth trends
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <BarChart3 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Interactive chart would be rendered here</p>
+                    <p className="text-sm">Using Chart.js or Recharts</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-background to-muted/10 border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5" />
+                  Revenue Breakdown
+                </CardTitle>
+                <CardDescription>
+                  Revenue distribution by plan type
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                  <div className="text-center">
+                    <PieChart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Revenue pie chart would be rendered here</p>
+                    <p className="text-sm">Showing plan distribution</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="bg-gradient-to-br from-background to-muted/10 border-border/50">
             <CardHeader>
-              <CardTitle>Role Permissions</CardTitle>
+              <CardTitle>Key Metrics</CardTitle>
               <CardDescription>
-                Overview of what each role can do
+                Important performance indicators
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Crown className="h-5 w-5 text-red-500" />
-                    <h3 className="font-semibold">Admin</h3>
+              <div className="grid gap-6 md:grid-cols-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Conversion Rate</span>
+                    <span className="text-sm text-muted-foreground">
+                      {stats.subscriptions.conversion_rate}%
+                    </span>
                   </div>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Full system access</li>
-                    <li>• Manage team members</li>
-                    <li>• Configure enterprise settings</li>
-                    <li>• Access billing & usage</li>
-                    <li>• Delete widgets & data</li>
-                  </ul>
+                  <Progress
+                    value={stats.subscriptions.conversion_rate}
+                    className="h-2"
+                  />
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Edit className="h-5 w-5 text-blue-500" />
-                    <h3 className="font-semibold">Editor</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Churn Rate</span>
+                    <span className="text-sm text-muted-foreground">
+                      {stats.subscriptions.churn_rate}%
+                    </span>
                   </div>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• Create & edit widgets</li>
-                    <li>• Manage AI providers</li>
-                    <li>• Upload knowledge base</li>
-                    <li>• View analytics</li>
-                    <li>• Export data</li>
-                  </ul>
+                  <Progress
+                    value={stats.subscriptions.churn_rate}
+                    className="h-2"
+                  />
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Eye className="h-5 w-5 text-gray-500" />
-                    <h3 className="font-semibold">Viewer</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      User Satisfaction
+                    </span>
+                    <span className="text-sm text-muted-foreground">94.2%</span>
                   </div>
-                  <ul className="text-sm space-y-1 text-muted-foreground">
-                    <li>• View widgets</li>
-                    <li>• View analytics</li>
-                    <li>• View conversations</li>
-                    <li>• Export reports</li>
-                    <li>• Read-only access</li>
-                  </ul>
+                  <Progress value={94.2} className="h-2" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="branding" className="space-y-6">
-          <Card>
+        {/* Subscriptions Tab */}
+        <TabsContent value="subscriptions" className="space-y-6">
+          <Card className="bg-gradient-to-br from-background to-muted/10 border-border/50">
             <CardHeader>
-              <CardTitle>Company Branding</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Subscription Overview
+              </CardTitle>
               <CardDescription>
-                Customize the appearance and branding of your widgets
+                Monitor subscription health and revenue
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="companyName">Company Name</Label>
-                    <Input
-                      id="companyName"
-                      value={brandingSettings.companyName}
-                      onChange={(e) =>
-                        setBrandingSettings((prev) => ({
-                          ...prev,
-                          companyName: e.target.value,
-                        }))
-                      }
-                    />
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-4">
+                <div className="text-center p-4 rounded-lg bg-muted/20">
+                  <div className="text-2xl font-bold text-green-500">
+                    {stats.subscriptions.active.toLocaleString()}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="logoUrl">Logo URL</Label>
-                    <Input
-                      id="logoUrl"
-                      placeholder="https://example.com/logo.png"
-                      value={brandingSettings.logoUrl}
-                      onChange={(e) =>
-                        setBrandingSettings((prev) => ({
-                          ...prev,
-                          logoUrl: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="customDomain">Custom Domain</Label>
-                    <Input
-                      id="customDomain"
-                      placeholder="chat.yourcompany.com"
-                      value={brandingSettings.customDomain}
-                      onChange={(e) =>
-                        setBrandingSettings((prev) => ({
-                          ...prev,
-                          customDomain: e.target.value,
-                        }))
-                      }
-                    />
+                  <div className="text-sm text-muted-foreground">
+                    Active Subscriptions
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="primaryColor">Primary Color</Label>
-                    <div className="flex space-x-2">
-                      <Input
-                        id="primaryColor"
-                        type="color"
-                        value={brandingSettings.primaryColor}
-                        onChange={(e) =>
-                          setBrandingSettings((prev) => ({
-                            ...prev,
-                            primaryColor: e.target.value,
-                          }))
-                        }
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        value={brandingSettings.primaryColor}
-                        onChange={(e) =>
-                          setBrandingSettings((prev) => ({
-                            ...prev,
-                            primaryColor: e.target.value,
-                          }))
-                        }
-                        className="flex-1"
-                      />
-                    </div>
+                <div className="text-center p-4 rounded-lg bg-muted/20">
+                  <div className="text-2xl font-bold">
+                    ${stats.revenue.monthly.toLocaleString()}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="secondaryColor">Secondary Color</Label>
-                    <div className="flex space-x-2">
-                      <Input
-                        id="secondaryColor"
-                        type="color"
-                        value={brandingSettings.secondaryColor}
-                        onChange={(e) =>
-                          setBrandingSettings((prev) => ({
-                            ...prev,
-                            secondaryColor: e.target.value,
-                          }))
-                        }
-                        className="w-16 h-10 p-1"
-                      />
-                      <Input
-                        value={brandingSettings.secondaryColor}
-                        onChange={(e) =>
-                          setBrandingSettings((prev) => ({
-                            ...prev,
-                            secondaryColor: e.target.value,
-                          }))
-                        }
-                        className="flex-1"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4">
-                    <div>
-                      <Label htmlFor="hideBranding">Hide Tempo Branding</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Remove &quot;Powered by Tempo&quot; from widgets
-                      </p>
-                    </div>
-                    <Switch
-                      id="hideBranding"
-                      checked={brandingSettings.hideTempobranding}
-                      onCheckedChange={(checked) =>
-                        setBrandingSettings((prev) => ({
-                          ...prev,
-                          hideTempobranding: checked,
-                        }))
-                      }
-                    />
+                  <div className="text-sm text-muted-foreground">
+                    Monthly Recurring Revenue
                   </div>
                 </div>
-              </div>
-
-              <Separator />
-
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="font-medium">Preview</h3>
-                  <p className="text-sm text-muted-foreground">
-                    See how your branding will look
-                  </p>
+                <div className="text-center p-4 rounded-lg bg-muted/20">
+                  <div className="text-2xl font-bold">
+                    ${stats.revenue.arr.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Annual Recurring Revenue
+                  </div>
                 </div>
-                <Button onClick={handleSaveBranding}>
-                  <Palette className="h-4 w-4 mr-2" />
-                  Save Branding
-                </Button>
-              </div>
-
-              <div className="border rounded-lg p-6 bg-muted/20">
-                <div className="max-w-sm mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
-                  <div
-                    className="p-4 border-b"
-                    style={{ backgroundColor: brandingSettings.primaryColor }}
-                  >
-                    <div className="flex items-center space-x-2">
-                      {brandingSettings.logoUrl && (
-                        <img
-                          src={brandingSettings.logoUrl}
-                          alt="Logo"
-                          className="w-6 h-6"
-                        />
-                      )}
-                      <span className="text-white font-medium">
-                        {brandingSettings.companyName} Support
-                      </span>
-                    </div>
+                <div className="text-center p-4 rounded-lg bg-muted/20">
+                  <div className="text-2xl font-bold text-red-500">
+                    {stats.subscriptions.churn_rate}%
                   </div>
-                  <div className="p-4 space-y-3">
-                    <div className="bg-gray-100 rounded-lg p-3">
-                      <p className="text-sm">
-                        Hello! How can I help you today?
-                      </p>
-                    </div>
-                    <div className="flex justify-end">
-                      <div className="bg-blue-500 text-white rounded-lg p-3 max-w-xs">
-                        <p className="text-sm">I need help with my account</p>
-                      </div>
-                    </div>
+                  <div className="text-sm text-muted-foreground">
+                    Churn Rate
                   </div>
-                  {!brandingSettings.hideTempobranding && (
-                    <div className="px-4 pb-2">
-                      <p className="text-xs text-gray-400 text-center">
-                        Powered by Tempo
-                      </p>
-                    </div>
-                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="webhooks" className="space-y-6">
-          <Card>
+        {/* Settings Tab */}
+        <TabsContent value="settings" className="space-y-6">
+          <Card className="bg-gradient-to-br from-background to-muted/10 border-border/50">
             <CardHeader>
-              <CardTitle>Add Webhook</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                System Configuration
+              </CardTitle>
               <CardDescription>
-                Configure webhooks to receive real-time notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="webhookName">Name</Label>
-                  <Input
-                    id="webhookName"
-                    placeholder="Slack Notifications"
-                    value={newWebhook.name}
-                    onChange={(e) =>
-                      setNewWebhook((prev) => ({
-                        ...prev,
-                        name: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="webhookUrl">Webhook URL</Label>
-                  <Input
-                    id="webhookUrl"
-                    placeholder="https://hooks.slack.com/..."
-                    value={newWebhook.url}
-                    onChange={(e) =>
-                      setNewWebhook((prev) => ({
-                        ...prev,
-                        url: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="flex items-end">
-                  <Button onClick={handleAddWebhook} className="w-full">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Webhook
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Webhook Endpoints</CardTitle>
-              <CardDescription>
-                Manage your webhook endpoints and their event subscriptions
+                Manage platform settings and configurations
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {webhooks.map((webhook) => (
-                  <div
-                    key={webhook.id}
-                    className="border rounded-lg p-4 space-y-4"
-                  >
-                    <div className="flex items-center justify-between">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Platform Name</Label>
+                    <Input defaultValue="Multi-AI Widget Builder" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Support Email</Label>
+                    <Input defaultValue="support@platform.com" />
+                  </div>
+                </div>
+                <Separator />
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Security Settings</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="flex items-center justify-between p-4 rounded-lg border">
                       <div>
-                        <h4 className="font-medium">{webhook.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {webhook.url}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Last triggered: {webhook.lastTriggered}
-                        </p>
+                        <div className="font-medium">
+                          Two-Factor Authentication
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Require 2FA for admin users
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        {getStatusBadge(webhook.status)}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemoveWebhook(webhook.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
+                        Enabled
+                      </Badge>
                     </div>
-
-                    <div>
-                      <Label className="text-sm font-medium">Events</Label>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
-                        {availableEvents.map((event) => (
-                          <div
-                            key={event}
-                            className="flex items-center space-x-2"
-                          >
-                            <input
-                              type="checkbox"
-                              id={`${webhook.id}-${event}`}
-                              checked={webhook.events.includes(event)}
-                              onChange={() =>
-                                handleToggleWebhookEvent(webhook.id, event)
-                              }
-                              className="rounded"
-                            />
-                            <Label
-                              htmlFor={`${webhook.id}-${event}`}
-                              className="text-xs"
-                            >
-                              {event}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center justify-between p-4 rounded-lg border">
                       <div>
-                        <Label className="text-sm font-medium">
-                          Webhook Secret
-                        </Label>
-                        <p className="text-xs text-muted-foreground font-mono">
-                          {webhook.secret}
-                        </p>
+                        <div className="font-medium">Session Timeout</div>
+                        <div className="text-sm text-muted-foreground">
+                          Auto-logout inactive users
+                        </div>
                       </div>
-                      <Button variant="outline" size="sm">
-                        Test Webhook
-                      </Button>
+                      <Badge variant="outline">24 hours</Badge>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="security" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>
-                Configure security and access control settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Two-Factor Authentication</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Require 2FA for all admin users
-                    </p>
-                  </div>
-                  <Switch />
                 </div>
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">IP Whitelist</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Restrict access to specific IP addresses
-                    </p>
-                  </div>
-                  <Switch />
-                </div>
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Session Timeout</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically log out inactive users
-                    </p>
-                  </div>
-                  <Select defaultValue="24">
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 hour</SelectItem>
-                      <SelectItem value="8">8 hours</SelectItem>
-                      <SelectItem value="24">24 hours</SelectItem>
-                      <SelectItem value="168">7 days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Separator />
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Audit Logging</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Log all user actions and system events
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <Separator />
-
-                <div className="pt-4">
-                  <Button>
-                    <Shield className="h-4 w-4 mr-2" />
-                    Save Security Settings
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Data & Privacy</CardTitle>
-              <CardDescription>
-                Manage data retention and privacy settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="dataRetention">Data Retention Period</Label>
-                <Select defaultValue="365">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">30 days</SelectItem>
-                    <SelectItem value="90">90 days</SelectItem>
-                    <SelectItem value="365">1 year</SelectItem>
-                    <SelectItem value="1095">3 years</SelectItem>
-                    <SelectItem value="-1">Forever</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  How long to keep conversation data and analytics
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">GDPR Compliance</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Enable GDPR data processing features
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-medium">Data Export</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Allow users to export their data
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="pt-4">
-                <Button variant="outline">Export All Data</Button>
               </div>
             </CardContent>
           </Card>
