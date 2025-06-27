@@ -1,62 +1,34 @@
 // Custom hook for user management
-
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   userService,
-  type User,
-  type UserFilters,
-  type CreateUserData,
-  type UpdateUserData,
+  User,
+  UserFilters,
+  CreateUserData,
+  UpdateUserData,
 } from "@/services/user.service";
 import { useToast } from "@/components/ui/use-toast";
 
-interface UseUsersReturn {
-  users: User[];
-  loading: boolean;
-  error: string | null;
-  pagination: {
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-  };
-  filters: UserFilters;
-  setFilters: (filters: UserFilters) => void;
-  createUser: (data: CreateUserData) => Promise<void>;
-  updateUser: (id: string, data: UpdateUserData) => Promise<void>;
-  deleteUser: (id: string) => Promise<void>;
-  suspendUser: (id: string) => Promise<void>;
-  activateUser: (id: string) => Promise<void>;
-  resendInvitation: (id: string) => Promise<void>;
-  refreshUsers: () => Promise<void>;
-}
-
-export function useUsers(): UseUsersReturn {
+export function useUsers(initialFilters?: UserFilters) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
-    current_page: 1,
-    last_page: 1,
-    per_page: 10,
-    total: 0,
-  });
-  const [filters, setFilters] = useState<UserFilters>({
-    page: 1,
-    per_page: 10,
-    sort_by: "created_at",
-    sort_order: "desc",
-  });
-
+  const [filters, setFilters] = useState<UserFilters>(initialFilters || {});
+  const [stats, setStats] = useState<{
+    total: number;
+    active: number;
+    inactive: number;
+    pending: number;
+    byRole: Record<string, number>;
+  } | null>(null);
   const { toast } = useToast();
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await userService.getUsers(filters);
       setUsers(response.data);
-      setPagination(response.meta);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to fetch users";
@@ -69,162 +41,166 @@ export function useUsers(): UseUsersReturn {
     } finally {
       setLoading(false);
     }
-  }, [filters, toast]);
+  };
 
-  const createUser = useCallback(
-    async (data: CreateUserData) => {
-      try {
-        await userService.createUser(data);
-        toast({
-          title: "Success",
-          description: "User created successfully",
-        });
-        await fetchUsers();
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to create user";
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        throw err;
-      }
-    },
-    [fetchUsers, toast],
-  );
+  const fetchStats = async () => {
+    try {
+      const response = await userService.getUserStats();
+      setStats(response.data);
+    } catch (err) {
+      console.error("Failed to fetch user stats:", err);
+    }
+  };
 
-  const updateUser = useCallback(
-    async (id: string, data: UpdateUserData) => {
-      try {
-        await userService.updateUser(id, data);
-        toast({
-          title: "Success",
-          description: "User updated successfully",
-        });
-        await fetchUsers();
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to update user";
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        throw err;
-      }
-    },
-    [fetchUsers, toast],
-  );
+  const createUser = async (userData: CreateUserData) => {
+    try {
+      const response = await userService.createUser(userData);
+      setUsers((prev) => [response.data, ...prev]);
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
+      return response.data;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to create user";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
 
-  const deleteUser = useCallback(
-    async (id: string) => {
-      try {
-        await userService.deleteUser(id);
-        toast({
-          title: "Success",
-          description: "User deleted successfully",
-        });
-        await fetchUsers();
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to delete user";
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        throw err;
-      }
-    },
-    [fetchUsers, toast],
-  );
+  const updateUser = async (id: string, userData: UpdateUserData) => {
+    try {
+      const response = await userService.updateUser(id, userData);
+      setUsers((prev) =>
+        prev.map((user) => (user.id === id ? response.data : user)),
+      );
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+      return response.data;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update user";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
 
-  const suspendUser = useCallback(
-    async (id: string) => {
-      try {
-        await userService.suspendUser(id);
-        toast({
-          title: "Success",
-          description: "User suspended successfully",
-        });
-        await fetchUsers();
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to suspend user";
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        throw err;
-      }
-    },
-    [fetchUsers, toast],
-  );
+  const deleteUser = async (id: string) => {
+    try {
+      await userService.deleteUser(id);
+      setUsers((prev) => prev.filter((user) => user.id !== id));
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to delete user";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
 
-  const activateUser = useCallback(
-    async (id: string) => {
-      try {
-        await userService.activateUser(id);
-        toast({
-          title: "Success",
-          description: "User activated successfully",
-        });
-        await fetchUsers();
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to activate user";
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        throw err;
-      }
-    },
-    [fetchUsers, toast],
-  );
+  const bulkUpdateUsers = async (
+    userIds: string[],
+    updates: UpdateUserData,
+  ) => {
+    try {
+      await userService.bulkUpdateUsers(userIds, updates);
+      await fetchUsers(); // Refresh the list
+      toast({
+        title: "Success",
+        description: `${userIds.length} users updated successfully`,
+      });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update users";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
 
-  const resendInvitation = useCallback(
-    async (id: string) => {
-      try {
-        await userService.resendInvitation(id);
-        toast({
-          title: "Success",
-          description: "Invitation sent successfully",
-        });
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to send invitation";
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        throw err;
-      }
-    },
-    [toast],
-  );
+  const exportUsers = async () => {
+    try {
+      const response = await userService.exportUsers(filters);
+      // Handle blob download
+      const url = window.URL.createObjectURL(response.data as Blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "users-export.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Users exported successfully",
+      });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to export users";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateFilters = (newFilters: UserFilters) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  const resetFilters = () => {
+    setFilters({});
+  };
+
+  const refresh = () => {
+    fetchUsers();
+    fetchStats();
+  };
 
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+  }, [filters]);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   return {
     users,
     loading,
     error,
-    pagination,
+    stats,
     filters,
-    setFilters,
     createUser,
     updateUser,
     deleteUser,
-    suspendUser,
-    activateUser,
-    resendInvitation,
-    refreshUsers: fetchUsers,
+    bulkUpdateUsers,
+    exportUsers,
+    updateFilters,
+    resetFilters,
+    refresh,
   };
 }

@@ -1,104 +1,99 @@
 // User service layer for clean abstraction
-
-import {
-  apiClient,
-  type ApiResponse,
-  type PaginatedResponse,
-} from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "editor" | "viewer" | "user";
-  status: "active" | "inactive" | "pending" | "suspended";
+  role: "admin" | "user" | "moderator";
+  status: "active" | "inactive" | "pending";
   avatar?: string;
-  created_at: string;
-  updated_at: string;
-  last_login?: string;
-  subscription?: {
-    plan: string;
-    status: string;
-    expires_at?: string;
-  };
-  stats?: {
-    widgets_created: number;
-    conversations: number;
-    last_active: string;
-  };
-}
-
-export interface UserFilters {
-  search?: string;
-  role?: string;
-  status?: string;
-  page?: number;
-  per_page?: number;
-  sort_by?: string;
-  sort_order?: "asc" | "desc";
+  createdAt: string;
+  lastLogin?: string;
+  permissions: string[];
 }
 
 export interface CreateUserData {
   name: string;
   email: string;
-  role: User["role"];
-  password?: string;
-  send_invitation?: boolean;
+  role: "admin" | "user" | "moderator";
+  permissions?: string[];
 }
 
 export interface UpdateUserData {
   name?: string;
   email?: string;
-  role?: User["role"];
-  status?: User["status"];
+  role?: "admin" | "user" | "moderator";
+  status?: "active" | "inactive" | "pending";
+  permissions?: string[];
+}
+
+export interface UserFilters {
+  role?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
 }
 
 class UserService {
-  async getUsers(filters?: UserFilters): Promise<PaginatedResponse<User>> {
-    return apiClient.getPaginated<User>("/users", filters);
+  async getUsers(filters?: UserFilters) {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+
+    return apiClient.get<User[]>(`/users?${params.toString()}`);
   }
 
-  async getUser(id: string): Promise<ApiResponse<User>> {
+  async getUserById(id: string) {
     return apiClient.get<User>(`/users/${id}`);
   }
 
-  async createUser(data: CreateUserData): Promise<ApiResponse<User>> {
-    return apiClient.post<User>("/users", data);
+  async createUser(userData: CreateUserData) {
+    return apiClient.post<User>("/users", userData);
   }
 
-  async updateUser(
-    id: string,
-    data: UpdateUserData,
-  ): Promise<ApiResponse<User>> {
-    return apiClient.put<User>(`/users/${id}`, data);
+  async updateUser(id: string, userData: UpdateUserData) {
+    return apiClient.put<User>(`/users/${id}`, userData);
   }
 
-  async deleteUser(id: string): Promise<ApiResponse<void>> {
-    return apiClient.delete<void>(`/users/${id}`);
+  async deleteUser(id: string) {
+    return apiClient.delete(`/users/${id}`);
   }
 
-  async suspendUser(id: string): Promise<ApiResponse<User>> {
-    return apiClient.post<User>(`/users/${id}/suspend`, {});
-  }
-
-  async activateUser(id: string): Promise<ApiResponse<User>> {
-    return apiClient.post<User>(`/users/${id}/activate`, {});
-  }
-
-  async resendInvitation(id: string): Promise<ApiResponse<void>> {
-    return apiClient.post<void>(`/users/${id}/resend-invitation`, {});
-  }
-
-  async getUserStats(): Promise<
-    ApiResponse<{
+  async getUserStats() {
+    return apiClient.get<{
       total: number;
       active: number;
       inactive: number;
       pending: number;
-      growth_rate: number;
-    }>
-  > {
-    return apiClient.get("/users/stats");
+      byRole: Record<string, number>;
+    }>("/users/stats");
+  }
+
+  async bulkUpdateUsers(userIds: string[], updates: UpdateUserData) {
+    return apiClient.post("/users/bulk-update", {
+      userIds,
+      updates,
+    });
+  }
+
+  async exportUsers(filters?: UserFilters) {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+
+    return apiClient.get<Blob>(`/users/export?${params.toString()}`);
   }
 }
 

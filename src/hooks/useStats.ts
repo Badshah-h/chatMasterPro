@@ -1,34 +1,28 @@
 // Custom hook for dashboard statistics
-
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   analyticsService,
-  type DashboardStats,
-  type AnalyticsFilters,
+  AnalyticsData,
+  AnalyticsFilters,
 } from "@/services/analytics.service";
 import { useToast } from "@/components/ui/use-toast";
 
-interface UseStatsReturn {
-  stats: DashboardStats | null;
-  loading: boolean;
-  error: string | null;
-  filters: AnalyticsFilters;
-  setFilters: (filters: AnalyticsFilters) => void;
-  refreshStats: () => Promise<void>;
-}
-
-export function useStats(): UseStatsReturn {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+export function useStats(initialFilters?: AnalyticsFilters) {
+  const [stats, setStats] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<AnalyticsFilters>({
-    period: "30d",
-    compare: false,
-  });
-
+  const [filters, setFilters] = useState<AnalyticsFilters>(
+    initialFilters || {},
+  );
+  const [realtimeStats, setRealtimeStats] = useState<{
+    activeUsers: number;
+    activeConversations: number;
+    systemLoad: number;
+    responseTime: number;
+  } | null>(null);
   const { toast } = useToast();
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -46,24 +40,81 @@ export function useStats(): UseStatsReturn {
     } finally {
       setLoading(false);
     }
-  }, [filters, toast]);
+  };
+
+  const fetchRealtimeStats = async () => {
+    try {
+      const response = await analyticsService.getRealtimeStats();
+      setRealtimeStats(response.data);
+    } catch (err) {
+      console.error("Failed to fetch realtime stats:", err);
+    }
+  };
+
+  const exportAnalytics = async () => {
+    try {
+      const response = await analyticsService.exportAnalytics(filters);
+      // Handle blob download
+      const url = window.URL.createObjectURL(response.data as Blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "analytics-export.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "Analytics exported successfully",
+      });
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to export analytics";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const updateFilters = (newFilters: AnalyticsFilters) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
+  const resetFilters = () => {
+    setFilters({});
+  };
+
+  const refresh = () => {
+    fetchStats();
+    fetchRealtimeStats();
+  };
+
+  // Set up realtime updates
+  useEffect(() => {
+    const interval = setInterval(fetchRealtimeStats, 30000); // Update every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+  }, [filters]);
 
-  // Auto-refresh every 5 minutes
   useEffect(() => {
-    const interval = setInterval(fetchStats, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [fetchStats]);
+    fetchRealtimeStats();
+  }, []);
 
   return {
     stats,
+    realtimeStats,
     loading,
     error,
     filters,
-    setFilters,
-    refreshStats: fetchStats,
+    exportAnalytics,
+    updateFilters,
+    resetFilters,
+    refresh,
   };
 }

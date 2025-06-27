@@ -1,125 +1,161 @@
 // Subscription service layer for subscription management
-
-import {
-  apiClient,
-  type ApiResponse,
-  type PaginatedResponse,
-} from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 
 export interface Subscription {
   id: string;
-  user_id: string;
-  plan_id: string;
-  status: "active" | "cancelled" | "past_due" | "unpaid" | "trialing";
-  current_period_start: string;
-  current_period_end: string;
-  cancel_at_period_end: boolean;
-  cancelled_at?: string;
-  trial_end?: string;
-  created_at: string;
-  updated_at: string;
-  plan: {
-    id: string;
-    name: string;
-    price: number;
-    interval: "month" | "year";
-    features: string[];
+  userId: string;
+  planId: string;
+  planName: string;
+  status: "active" | "canceled" | "past_due" | "trialing" | "incomplete";
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+  trialEnd?: string;
+  amount: number;
+  currency: string;
+  interval: "month" | "year";
+  features: string[];
+  usage: {
+    widgets: number;
+    conversations: number;
+    storage: number;
   };
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  payment_method?: {
-    type: string;
-    last4: string;
-    brand: string;
+  limits: {
+    widgets: number;
+    conversations: number;
+    storage: number;
   };
 }
 
-export interface SubscriptionFilters {
-  search?: string;
-  status?: string;
-  plan?: string;
-  page?: number;
-  per_page?: number;
-  sort_by?: string;
-  sort_order?: "asc" | "desc";
+export interface Plan {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  interval: "month" | "year";
+  features: string[];
+  limits: {
+    widgets: number;
+    conversations: number;
+    storage: number;
+  };
+  popular?: boolean;
 }
 
 export interface SubscriptionStats {
   total: number;
   active: number;
-  cancelled: number;
-  past_due: number;
+  canceled: number;
   trialing: number;
-  mrr: number;
-  arr: number;
-  churn_rate: number;
-  ltv: number;
+  revenue: {
+    monthly: number;
+    yearly: number;
+    total: number;
+  };
+  churnRate: number;
+  growthRate: number;
+}
+
+export interface CreateSubscriptionData {
+  userId: string;
+  planId: string;
+  paymentMethodId?: string;
+  trialDays?: number;
+}
+
+export interface UpdateSubscriptionData {
+  planId?: string;
+  cancelAtPeriodEnd?: boolean;
 }
 
 class SubscriptionService {
-  async getSubscriptions(
-    filters?: SubscriptionFilters,
-  ): Promise<PaginatedResponse<Subscription>> {
-    return apiClient.getPaginated<Subscription>("/subscriptions", filters);
+  async getSubscriptions(filters?: {
+    status?: string;
+    planId?: string;
+    userId?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          params.append(key, value.toString());
+        }
+      });
+    }
+
+    return apiClient.get<Subscription[]>(`/subscriptions?${params.toString()}`);
   }
 
-  async getSubscription(id: string): Promise<ApiResponse<Subscription>> {
+  async getSubscriptionById(id: string) {
     return apiClient.get<Subscription>(`/subscriptions/${id}`);
   }
 
-  async cancelSubscription(
-    id: string,
-    immediately: boolean = false,
-  ): Promise<ApiResponse<Subscription>> {
-    return apiClient.post<Subscription>(`/subscriptions/${id}/cancel`, {
-      immediately,
+  async getUserSubscription(userId: string) {
+    return apiClient.get<Subscription>(`/users/${userId}/subscription`);
+  }
+
+  async createSubscription(data: CreateSubscriptionData) {
+    return apiClient.post<Subscription>("/subscriptions", data);
+  }
+
+  async updateSubscription(id: string, data: UpdateSubscriptionData) {
+    return apiClient.put<Subscription>(`/subscriptions/${id}`, data);
+  }
+
+  async cancelSubscription(id: string, cancelAtPeriodEnd: boolean = true) {
+    return apiClient.post(`/subscriptions/${id}/cancel`, {
+      cancelAtPeriodEnd,
     });
   }
 
-  async reactivateSubscription(id: string): Promise<ApiResponse<Subscription>> {
-    return apiClient.post<Subscription>(`/subscriptions/${id}/reactivate`, {});
+  async reactivateSubscription(id: string) {
+    return apiClient.post(`/subscriptions/${id}/reactivate`);
   }
 
-  async updateSubscription(
-    id: string,
-    planId: string,
-  ): Promise<ApiResponse<Subscription>> {
-    return apiClient.put<Subscription>(`/subscriptions/${id}`, {
-      plan_id: planId,
-    });
+  async getPlans() {
+    return apiClient.get<Plan[]>("/plans");
   }
 
-  async getSubscriptionStats(): Promise<ApiResponse<SubscriptionStats>> {
+  async getPlanById(id: string) {
+    return apiClient.get<Plan>(`/plans/${id}`);
+  }
+
+  async getSubscriptionStats() {
     return apiClient.get<SubscriptionStats>("/subscriptions/stats");
   }
 
-  async getUpcomingRenewals(): Promise<ApiResponse<Subscription[]>> {
-    return apiClient.get<Subscription[]>("/subscriptions/upcoming-renewals");
+  async getUsage(subscriptionId: string) {
+    return apiClient.get<{
+      widgets: { used: number; limit: number };
+      conversations: { used: number; limit: number };
+      storage: { used: number; limit: number };
+    }>(`/subscriptions/${subscriptionId}/usage`);
   }
 
-  async getPastDueSubscriptions(): Promise<ApiResponse<Subscription[]>> {
-    return apiClient.get<Subscription[]>("/subscriptions/past-due");
+  async getInvoices(subscriptionId: string) {
+    return apiClient.get<
+      {
+        id: string;
+        amount: number;
+        currency: string;
+        status: string;
+        date: string;
+        downloadUrl: string;
+      }[]
+    >(`/subscriptions/${subscriptionId}/invoices`);
   }
 
-  async processRefund(
-    subscriptionId: string,
-    amount?: number,
-  ): Promise<ApiResponse<void>> {
-    return apiClient.post<void>(`/subscriptions/${subscriptionId}/refund`, {
-      amount,
+  async previewUpgrade(subscriptionId: string, newPlanId: string) {
+    return apiClient.post<{
+      prorationAmount: number;
+      nextInvoiceAmount: number;
+      effectiveDate: string;
+    }>(`/subscriptions/${subscriptionId}/preview-upgrade`, {
+      planId: newPlanId,
     });
-  }
-
-  async sendPaymentReminder(
-    subscriptionId: string,
-  ): Promise<ApiResponse<void>> {
-    return apiClient.post<void>(
-      `/subscriptions/${subscriptionId}/payment-reminder`,
-      {},
-    );
   }
 }
 
