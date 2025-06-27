@@ -9,54 +9,88 @@ import { Save, Code, Eye, Settings, Palette, Play } from "lucide-react";
 import AppearanceEditor from "./AppearanceEditor";
 import WidgetPreview from "./WidgetPreview";
 
-interface WidgetBuilderProps {
-  widgetId?: string;
+
+// Import the AppearanceSettings type
+interface AppearanceSettings {
+  colors: {
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    text: string;
+  };
+  typography: {
+    fontFamily: string;
+    fontSize: number;
+    headingFont: string;
+  };
+  layout: {
+    position:
+    | "bottom-right"
+    | "bottom-left"
+    | "top-right"
+    | "top-left"
+    | "custom";
+    borderRadius: number;
+    shadow: number;
+    animation: "slide" | "fade" | "bounce";
+    autoOpen: boolean;
+    autoOpenDelay: number;
+  };
+  branding: {
+    logo: string;
+    botAvatar: string;
+    companyName: string;
+    welcomeMessage: string;
+    showPoweredBy: boolean;
+  };
 }
 
-export default function WidgetBuilder({
-  widgetId = "new-widget",
-}: WidgetBuilderProps) {
+interface WidgetBuilderProps { }
+
+export default function WidgetBuilder({ }: WidgetBuilderProps = {}) {
   const [activeTab, setActiveTab] = useState("appearance");
-  const [widgetSettings, setWidgetSettings] = useState({
+  const [widgetSettings, setWidgetSettings] = useState<AppearanceSettings>({
     colors: {
       primary: "#3b82f6",
-      secondary: "#f472b6",
+      secondary: "#6366f1",
+      accent: "#f472b6",
       background: "#ffffff",
       text: "#1f2937",
     },
-    fonts: {
-      primary: "Inter",
-      size: "medium",
+    typography: {
+      fontFamily: "Inter",
+      fontSize: 16,
+      headingFont: "Inter",
     },
-    position: {
-      placement: "bottom-right",
-      offset: { x: 20, y: 20 },
+    layout: {
+      position: "bottom-right" as const,
+      borderRadius: 8,
+      shadow: 2,
+      animation: "slide" as const,
+      autoOpen: false,
+      autoOpenDelay: 3,
     },
     branding: {
-      logo: "https://api.dicebear.com/7.x/avataaars/svg?seed=widget",
-      companyName: "Acme Inc",
-      welcomeMessage: "Hi there! How can I help you today?",
+      logo: "",
+      botAvatar: "",
+      companyName: "Your Company",
+      welcomeMessage: "Hello! How can I help you today?",
       showPoweredBy: true,
-    },
-    behavior: {
-      animation: "slide",
-      autoOpen: false,
-      openDelay: 3,
-      triggerText: "Chat with us",
     },
   });
 
   const [isSaving, setIsSaving] = useState(false);
-
-  const handleSettingsChange = (newSettings: any) => {
-    setWidgetSettings({ ...widgetSettings, ...newSettings });
+  const handleSettingsChange = (newSettings: AppearanceSettings) => {
+    setWidgetSettings(newSettings);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Simulate API call
+
     setTimeout(() => {
       setIsSaving(false);
+      // Handle save logic here
     }, 1000);
   };
 
@@ -70,10 +104,10 @@ export default function WidgetBuilder({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => {}}>
+          <Button variant="outline" onClick={() => { }}>
             <Eye className="mr-2 h-4 w-4" /> Preview
           </Button>
-          <Button variant="outline" onClick={() => {}}>
+          <Button variant="outline" onClick={() => { }}>
             <Code className="mr-2 h-4 w-4" /> Get Code
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
@@ -85,6 +119,7 @@ export default function WidgetBuilder({
 
       <Tabs
         defaultValue="appearance"
+        orientation="vertical"
         value={activeTab}
         onValueChange={setActiveTab}
         className="w-full"
@@ -107,7 +142,7 @@ export default function WidgetBuilder({
               <TabsContent value="appearance" className="mt-0">
                 <AppearanceEditor
                   settings={widgetSettings}
-                  onSettingsChange={handleSettingsChange}
+                  onChange={handleSettingsChange}
                 />
               </TabsContent>
 
@@ -159,7 +194,31 @@ export default function WidgetBuilder({
               </div>
               <Separator className="my-4" />
               <div className="h-[calc(100%-80px)] overflow-hidden">
-                <WidgetPreview settings={widgetSettings} />
+                <WidgetPreview widgetConfig={{
+                  colors: {
+                    primary: widgetSettings.colors.primary,
+                    secondary: widgetSettings.colors.secondary,
+                    background: widgetSettings.colors.background,
+                    text: widgetSettings.colors.text,
+                  },
+                  fonts: {
+                    family: widgetSettings.typography.fontFamily,
+                    size: widgetSettings.typography.fontSize.toString() + "px",
+                  },
+                  position: {
+                    placement: widgetSettings.layout.position as "bottom-right" | "bottom-left" | "top-right" | "top-left",
+                  },
+                  branding: {
+                    logo: widgetSettings.branding.logo,
+                    botAvatar: widgetSettings.branding.botAvatar,
+                    companyName: widgetSettings.branding.companyName,
+                    welcomeMessage: widgetSettings.branding.welcomeMessage,
+                    showPoweredBy: widgetSettings.branding.showPoweredBy,
+                  },
+                  size: "standard" as const,
+                  borderRadius: widgetSettings.layout.borderRadius,
+                  shadow: widgetSettings.layout.shadow as unknown as "none" | "small" | "medium" | "large",
+                }} />
               </div>
             </CardContent>
           </Card>

@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/switch";    
 import {
   Select,
   SelectContent,
@@ -31,7 +31,7 @@ import {
   Monitor,
   Tablet,
 } from "lucide-react";
-
+import { TempoInit } from "@/components/tempo-init";
 interface AppearanceEditorProps {
   onChange?: (settings: AppearanceSettings) => void;
   settings?: AppearanceSettings;
@@ -194,6 +194,7 @@ const AppearanceEditor: React.FC<AppearanceEditorProps> = ({
 
   return (
     <div className="bg-background w-full h-full flex flex-col">
+      <TempoInit />
       <div className="flex items-center justify-between p-4 border-b">
         <h2 className="text-xl font-semibold">Appearance Editor</h2>
         <div className="flex items-center space-x-2">
